@@ -4,9 +4,9 @@ import argparse             # Import argparse module
 import atexit
 import thread
 import threading
-#Part 1 Done
+# Part 1,2 Done
 
-#Required arguments specification
+# Required arguments specification
 parser = argparse.ArgumentParser(add_help=False)
 parser.add_argument("-s", "--serverIP", help="indicate the server IP address", required=True)
 parser.add_argument("-p", "--port", type=int, help="port number for client to connect to server", required=True)
@@ -33,14 +33,17 @@ def logToFile(msg):
 # Listener thread log messages recieved from server
 def msgListener(sock):
     while True:
-        serverMsg = sock.recvfrom(1024)
-        print("[DEBUG] Received message from server : ", serverMsg[0])
-        serverMsgDataList = serverMsg[0].split()
+        serverMsgData = sock.recv(1024)
+        print("[DEBUG] Received message from server :", serverMsgData)
+        serverMsgDataList = serverMsgData.split()
         
         if len(serverMsgDataList) == 2 and serverMsgDataList[0] == "welcome" and serverMsgDataList[1].lower() == CLIENT_NAME.lower():
             serverWelcomeMsg = serverMsgDataList[0]
             #log print
             logToFile("received " + serverWelcomeMsg)
+        elif len(serverMsgDataList) > 2 and serverMsgDataList[0] == "recvfrom":
+            print(serverMsgData)
+            logToFile(serverMsgData)
         else:
             print("[ERROR] incorrect server msg format")
 
@@ -65,8 +68,14 @@ def main():
     while True:
         cmd = raw_input("> ")
         print("[DEBUG] Input command :", cmd)
-        if str(cmd) == "exit":
+        if cmd == "exit":
             break
+        elif cmd.startswith("sendto "):
+            cmdList = cmd.split()
+            if len(cmdList) > 2:
+                sock.sendto(cmd, serverAddress)
+                print(cmd)
+                logToFile(cmd)
         else:
             print("[DEBUG] Unsupported command")
 
